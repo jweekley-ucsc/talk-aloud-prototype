@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Talk-Aloud Interview</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-6 font-sans">
+  <div class="max-w-4xl mx-auto space-y-6">
+    <h1 class="text-3xl font-bold text-gray-800">Talk-Aloud Interview</h1>
+
+    <!-- Interview Prompt -->
+    <div>
+      <h2 class="text-xl font-semibold text-gray-700">Interview Question</h2>
+      <p class="text-gray-600 mb-2">Please explain your reasoning out loud as you work through the following task.</p>
+      <div id="questionBox" class="bg-white p-4 border rounded shadow mb-4">
+        Describe how you would solve a problem that involves evaluating student reflections using an LLM.
+      </div>
+    </div>
+
+    <!-- Recording Controls -->
+    <div class="space-y-2">
+      <p id="instructions" class="text-sm text-red-600">
+        You may only record once. Click to start, then click again to stop.
+      </p>
+      <button id="recordBtn" class="bg-blue-600 text-white px-4 py-2 rounded">
+        Start Recording
+      </button>
+      <span id="timerDisplay" class="ml-4 text-sm text-gray-700"></span>
+    </div>
+
+    <!-- Reflection Input -->
+    <div>
+      <label for="reflectionInput" class="block text-gray-700 font-medium mb-1 mt-4">Self-Reflection:</label>
+      <textarea id="reflectionInput" class="w-full p-3 border rounded shadow-sm h-32" placeholder="Write your reflection here..."></textarea>
+    </div>
+
+    <!-- Transcript Preview -->
+    <div>
+      <h2 class="text-xl font-semibold text-gray-700 mt-6 mb-2">Transcript Preview</h2>
+      <pre id="preview" class="bg-white p-4 rounded shadow h-64 overflow-y-auto whitespace-pre-wrap"></pre>
+    </div>
+
+    <!-- Controls -->
+    <div class="flex space-x-4 mt-4">
+      <button id="downloadAudio" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Download Audio</button>
+      <button id="downloadJson" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Download JSON</button>
+      <button id="submitBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Submit Session</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

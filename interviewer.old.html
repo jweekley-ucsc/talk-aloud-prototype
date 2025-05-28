@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Interviewer Panel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans">
+  <main class="max-w-3xl mx-auto p-6 space-y-6">
+    <h1 class="text-3xl font-bold">Interviewer Interface</h1>
+
+    <!-- LLM Instructions -->
+    <section class="bg-white shadow rounded p-4">
+      <h2 class="text-lg font-semibold mb-2">LLM Evaluation Instructions</h2>
+      <textarea id="rubricInstructions" class="w-full border p-2 rounded h-40" placeholder="Enter the rubric, evaluation criteria, or prompt you will send to the LLM..."></textarea>
+    </section>
+
+    <!-- Transcript Controls -->
+    <section>
+      <button id="loadTranscriptBtn" class="bg-blue-600 text-white px-4 py-2 rounded">
+        Load Latest Submitted Transcript
+      </button>
+    </section>
+
+    <!-- Transcript Display -->
+    <section>
+      <h2 class="text-lg font-semibold mt-4 mb-2">Transcript Preview</h2>
+      <pre id="transcriptPreview" class="bg-white border border-gray-300 p-4 rounded whitespace-pre-wrap text-sm">
+Transcript will appear here.
+      </pre>
+    </section>
+
+    <!-- Submit to LLM (moved below transcript) -->
+    <section class="mt-4">
+      <button id="submitToLLMBtn" class="bg-green-600 text-white px-4 py-2 rounded">
+        Submit to LLM for Evaluation
+      </button>
+    </section>
+
+    <!-- LLM Evaluation Output -->
+    <section>
+      <h2 class="text-lg font-semibold mt-4 mb-2">LLM Evaluation Output</h2>
+      <pre id="llmOutput" class="bg-white border border-green-300 p-4 rounded whitespace-pre-wrap text-sm text-green-900">
+Evaluation results will appear here.
+      </pre>
+    </section>
+  </main>
+
+  <script>
+    let loadedSession = null;
+
+    document.getElementById("loadTranscriptBtn").addEventListener("click", async () => {
+      const preview = document.getElementById("transcriptPreview");
+      preview.textContent = "Loading transcript...";
+
+      try {
+        const response = await fetch("http://127.0.0.1:5000/latest-session");
+        if (!response.ok) throw new Error(`Server error: ${response.status}`);
+        const data = await response.json();
+        loadedSession = data;
+
+        // Format the preview
+        let output = `Session ID: ${data.session_id || "N/A"}\n`;
+        output += `Start Time: ${data.start_time || "N/A"}\n`;
+        output += `Duration (sec): ${data.duration_sec || "N/A"}\n\n`;
+
+        if (data.reflection) {
+          output += `Reflection:\n${data.reflection.trim()}\n\n`;
+        }
+
+        if (data.transcript && Array.isArray(data.transcript)) {
+          output += `Transcript:\n`;
+          data.transcript.forEach(entry => {
+            output += `[${entry.timestamp}] ${entry.speaker || "Unknown"}: ${entry.text}\n`;
+          });
+        } else {
+          output += "Transcript not found.";
+        }
+
+        preview.textContent = output;
+      } catch (err) {
+        preview.textContent = "Failed to load transcript.";
+        console.error("Fetch error:", err);
+      }
+    });
+
+    document.getElementById("submitToLLMBtn").addEventListener("click", async () => {
+      const rubric = document.getElementById("rubricInstructions").value.trim();
+      const output = document.getElementById("llmOutput");
+
+      if (!rubric) {
+        alert("Please enter evaluation instructions.");
+        return;
+      }
+
+      if (!loadedSession) {
+        alert("No session data loaded.");
+        return;
+      }
+
+      output.textContent = "Submitting to LLM...";
+
+      const prompt = `Evaluate the following transcript according to these rubric instructions:\n\nRubric:\n${rubric}\n\nTranscript:\n${formatTranscript(loadedSession.transcript)}`;
+
+      try {
+        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer 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"
+          },
+          body: JSON.stringify({
+            model: "gpt-4",
+            messages: [
+              { role: "system", content: "You are an expert educational evaluator." },
+              { role: "user", content: prompt }
+            ],
+            temperature: 0.3
+          })
+        });
+
+        const data = await response.json();
+        output.textContent = data.choices?.[0]?.message?.content?.trim() || "No response received.";
+
+      } catch (err) {
+        output.textContent = "Failed to get response from LLM.";
+        console.error("LLM fetch error:", err);
+      }
+    });
+
+    function formatTranscript(transcriptArray) {
+      return transcriptArray.map(entry => `[${entry.timestamp}] ${entry.speaker}: ${entry.text}`).join("\n");
+    }
+  </script>
+</body>
+</html>

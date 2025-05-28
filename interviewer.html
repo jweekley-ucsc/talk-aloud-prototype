@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Interviewer Interface</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-8 font-sans">
+  <div class="max-w-4xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">Interviewer Interface</h1>
+
+    <!-- Transcript Display -->
+    <div>
+      <h2 class="text-xl font-semibold mb-2">Transcript Preview</h2>
+      <pre id="transcriptDisplay" class="bg-white p-4 rounded shadow overflow-x-auto h-64 mb-4 whitespace-pre-wrap"></pre>
+    </div>
+
+    <!-- Rubric Section -->
+    <div class="mb-6">
+      <h2 class="text-xl font-semibold mb-2">Rubric Selection</h2>
+      <label for="rubricSelect" class="block mb-1 font-medium">Choose Existing Rubric:</label>
+      <select id="rubricSelect" class="border p-2 rounded w-full mb-3">
+        <option value="example">Prompt Engineering Rubric</option>
+      </select>
+
+      <label for="rubricPaste" class="block mb-1 font-medium">Paste Rubric CSV:</label>
+      <textarea id="rubricPaste" class="w-full p-2 border rounded h-32 mb-3" placeholder="Paste CSV rubric here..."></textarea>
+
+      <label for="rubricUpload" class="block mb-1 font-medium">Upload Rubric CSV File:</label>
+      <input type="file" id="rubricUpload" accept=".csv" class="mb-3"/>
+    </div>
+
+    <!-- Submit Rubric Button -->
+    <button id="submitRubricBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mb-6">Submit Rubric</button>
+
+    <!-- Submit to LLM Button -->
+    <button id="sendToLLM" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Submit to LLM</button>
+  </div>
+
+  <script>
+    const transcriptDisplay = document.getElementById("transcriptDisplay");
+
+    async function fetchTranscript() {
+      try {
+        const res = await fetch("http://127.0.0.1:5050/transcript");
+        if (!res.ok) throw new Error("Failed to fetch transcript");
+        const data = await res.json();
+        const formatted = data.transcript.map(seg =>
+          `[${seg.timestamp}] ${seg.speaker}: ${seg.text}`
+        ).join("\n\n");
+        transcriptDisplay.textContent = formatted;
+      } catch (err) {
+        console.error("Transcript fetch error:", err);
+        transcriptDisplay.textContent = "Transcript not available.";
+      }
+    }
+
+    document.getElementById("submitRubricBtn").addEventListener("click", async () => {
+      let rubricCSV = "";
+
+      const pasted = document.getElementById("rubricPaste").value.trim();
+      if (pasted) {
+        rubricCSV = pasted;
+      } else {
+        const file = document.getElementById("rubricUpload").files[0];
+        if (file) {
+          rubricCSV = await file.text();
+        } else {
+          alert("Please paste or upload a rubric.");
+          return;
+        }
+      }
+
+      const payload = {
+        rubric_name: "Uploaded Rubric",
+        criteria: rubricCSV
+      };
+
+      try {
+        const response = await fetch("http://127.0.0.1:5050/rubrics", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        alert("Rubric submitted successfully.");
+      } catch (err) {
+        console.error("Error submitting rubric:", err);
+        alert("Failed to submit rubric.");
+      }
+    });
+
+    document.getElementById("sendToLLM").addEventListener("click", () => {
+      alert("Functionality to send to LLM coming in Prototype 3.");
+    });
+
+    fetchTranscript();
+  </script>
+</body>
+</html>
